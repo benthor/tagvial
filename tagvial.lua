@@ -54,11 +54,21 @@ local function mkset(array)
     return set
 end
 
-local tags = {}
+local tags = {spam={}}
+local filedb = {foo={spam=true}}
 
 local function gettaggedas(taglist)
-    -- TODO, implement tagging logic
-    return {foo= true}
+    local results = {}
+    for file,tagset in pairs(filedb) do
+        results[file] = true
+        for _,tag in ipairs(taglist) do
+            if not tagset[tag] then
+                results[file] = false
+                break
+            end
+        end
+    end
+    return results
 end
 
 local root = assert((...), "no root directory specified")
@@ -81,13 +91,21 @@ local fields = {'dev', 'ino', 'mode', 'nlink', 'uid', 'gid', 'rdev', 'size', 'at
 function fwfs:getattr(path, st)
     info("getattr! path->"..path)
     local tagset = splitpath(path)
+    -- XXX FUGLY
     local last = nil
     if # tagset > 0 then
         last = select(-1, unpack(tagset))
     end
+    -- FIXME, the loop protection should be included here as well
+    -- if the last tag is not in the global tagset
     if not tags[last] then
+        -- it is probably a file
         local pst = pio.new 'stat'
-        if pio.stat(root..path, pst)~=0 then
+        -- XXX FUGLY
+        -- protection for the / dir
+        last = last or ""
+        -- so we look and see if we have such a file
+        if pio.stat(root..'/'..last, pst)~=0 then
             return -errno.errno
         end
         for _,k in ipairs(fields) do
@@ -186,7 +204,9 @@ end
 
 function fwfs:open(path, fi)
     info("open! path->"..path.." fi->"..tostring(fi))
-    local fd = pio.open(root..path, fi.flags)
+    -- XXX is this elegant?
+    filename = select(-1, unpack(splitpath(path)))
+    local fd = pio.open(root.."/"..filename, fi.flags)
     if fd==-1 then
         return -errno.errno
     end
