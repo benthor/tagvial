@@ -38,7 +38,8 @@ Random Notes
 First Steps
 -----------
 - start from the "fwfs" example of "luse" - DONE
-- implement flat directory structure: all directories visible in all directories - TODO
+- create dummy mkdir, creating volatile "directories" - TODO
+- account for these in "opendir" - TODO (what about getattr?)
 - don't map directory creation to the origin root any more but keep in memory - TODO
 - make directories/tags persistent over remounts - TODO
 - figure out what to do next - TODO
@@ -59,3 +60,5 @@ Questions
 Future
 ------
 - infer new tags without having to create them
+- for now, we ignore all files in subdirectories possibly present in the backend dir. maybe do something smart here?
+

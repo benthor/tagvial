@@ -39,7 +39,7 @@ local function mkset(array)
 end
 
 local function splitpath(path)
-    local elemets = {}
+    local elements = {}
     for element in path:gmatch("[^/]+") do 
         table.insert(elements, element)
     end
@@ -54,12 +54,12 @@ local function mkset(array)
     return set
 end
 
-local root = {}
+local tags = {}
 
-local function gettag()
-
+local function gettaggedas(taglist)
+    -- TODO, implement tagging logic
+    return {foo= true}
 end
-
 
 local root = assert((...), "no root directory specified")
 
@@ -80,12 +80,23 @@ local fields = {'dev', 'ino', 'mode', 'nlink', 'uid', 'gid', 'rdev', 'size', 'at
 
 function fwfs:getattr(path, st)
     info("getattr! path->"..path)
-    local pst = pio.new 'stat'
-    if pio.stat(root..path, pst)~=0 then
-        return -errno.errno
+    local tagset = splitpath(path)
+    local last = nil
+    if # tagset > 0 then
+        last = select(-1, unpack(tagset))
     end
-    for _,k in ipairs(fields) do
-        st[k] = pst[k]
+    if not tags[last] then
+        local pst = pio.new 'stat'
+        if pio.stat(root..path, pst)~=0 then
+            return -errno.errno
+        end
+        for _,k in ipairs(fields) do
+            st[k] = pst[k]
+        end
+    else
+        st.mode = mkset({"IFDIR", "IRUSR", "IWUSR", "IXUSR", "IRGRP", "IWGRP", "IXGRP", "IROTH", "IWOTH", "IXOTH" })
+        st.size = 4096
+        st.nlink = 2
     end
 end
 
@@ -93,9 +104,16 @@ local descriptors = {}
 
 function fwfs:mkdir(path, mode)
     info("mkdir! path->"..path.." mode->"..tostring(mode))
-    if pio.mkdir(root..path, mode)~=0 then
-        return -errno.errno
+    path = splitpath(path)
+    -- XXX I wonder what happens if we don't check for presence
+    for _,tag in ipairs(path) do
+        if not tags[tag] then
+            tags[tag] = {}
+        end
     end
+    --if pio.mkdir(root..path, mode)~=0 then
+        --return -errno.errno
+    --end
 end
 
 function fwfs:rmdir(path)
@@ -107,18 +125,23 @@ end
 
 function fwfs:opendir(path, fi)
     info("opendir! path->"..path.." fi->"..udata.tostring(fi))
-    local dir = pio.opendir(root..path)
-    if not dir then
-        return -errno.errno
-    end
+    --local dir = pio.opendir(root..path)
+    -- FIXME prevent loops here by refusing to open
+    -- tags which contain themselves
+    --if not dir then
+        --return -errno.errno
+    --end
     fi.fh = #descriptors+1
-    descriptors[fi.fh] = {dir=dir}
+    -- XXX splitpath(path) is a bit arbitrary here
+    -- maybe not even needed
+    -- HA, IT IS NEEDED NOW
+    descriptors[fi.fh] = {dir=splitpath(path)}
 end
 
 function fwfs:releasedir(path, fi)
     info("releasedir! path->"..path.." fi->"..udata.tostring(fi))
     if fi.fh~=0 then
-        descriptors[fi.fh].dir:closedir()
+        --descriptors[fi.fh].dir:closedir()
         descriptors[fi.fh] = nil
     else
         return -errno.EINVAL
@@ -130,13 +153,19 @@ function fwfs:readdir(path, filler, offset, fi)
         -- fi: userdata
     info("readdir! path->"..path.." offset->"..offset.." fi->"..udata.tostring(fi))
     if fi.fh~=0 then
-        local dir = descriptors[fi.fh].dir
+        -- contains all tags (for now):
+        for tag,_ in pairs(tags) do
+            info("----------- entry->"..tag)
+            filler(tag, nil, 0)
+        end
+        local dir = pio.opendir(root)
+        local files = gettaggedas(descriptors[fi.fh].dir)
         repeat
             local entry = dir:readdir()
-            if entry then
-                                info("----------- entry->"..entry.name)
+            if entry and files[entry.name] then
+                info("----------- entry->"..entry.name)
                 filler(entry.name, nil, 0)
-            end
+           end
         until not entry
     end
 end
