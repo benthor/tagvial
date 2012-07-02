@@ -1,0 +1,33 @@
+luse-1.0.3:
+* Added support for absolute root dirs in fwfs example (thanks to Mauro Iazzi).
+* Added binding for POSIX function lstat.
+* Fixed parameter name/order for symlink, rename, link.
+* Added a missing include statement in errno.c (string.h for strerror).
+* Fixed the nlink value for directories in luafs.lua. That caused some
+  troubles to find (thanks to Hisham Muhammad).
+* Added luse.get_context function, to retrieve information about the current
+  FUSE request (thanks to Hisham Muhammad).
+* Renamed doc generation script to gendoc.lua. Added a makefile for doc
+  generation.
+
+luse-1.0.2:
+
+* Added a mechanism to support several FUSE versions (with initial support for
+  2.5 and 2.6 instead of only 2.6).
+* Fixed some code convention ('char *' vs. 'char* ').
+* Fixed a typo in the documentation ('developped' vs. 'developed').
+* Removed partial support of init and destroy methods.
+
+luse-1.0.1:
+
+* Added posixio.getcwd to get the current working directory.
+* Added constant posixio.PATH_MAX.
+* Added errno.strerror to get an error string.
+* Fixed a bug in fwfs: it did not use absolute path while it's necessary when
+  the fuse process detaches from the console (when neither -d or -f are
+  passed).
+
+luse-1.0.0:
+
+* First public version.
+* Initial FUSE binding, hellofs, luafs and fwfs examples.

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+lang="en">
+<head>
+<title>LUSE</title>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
+<link rel="stylesheet" href="doc.css" type="text/css"/>
+</head>
+<body>
+
+<div class="chapter" id="header">
+<img width="128" height="128" alt="LUSE" src="luse.png"/>
+<p>A FUSE binding for Lua</p>
+<p class="bar">
+<a href="index.html">home</a> &middot;
+<a href="index.html#download">download</a> &middot;
+<a href="index.html#installation">installation</a> &middot;
+<a href="manual.html">manual</a> &middot;
+<a href="examples.html">examples</a>
+</p>
+</div>
+
+<div class="chapter">
+<h1>1 - About LUSE</h1>
+
+<p>LUSE is a Lua binding for <a href="http://fuse.sourceforge.net/">FUSE</a>, which is a library allowing creation filesystem drivers run in userspace. LUSE is a low level binding. FUSE itself it rather slow, so LUSE tries not to impede performance more than necessary. For that reason it is manipulating userdata and pointers directly rather than Lua strings, with the reduced safety implied.</p>
+
+<p>LUSE tries to be complete, but is not supporting obsolete APIs. The binding is closely following the FUSE API, so in most case you can use FUSE documentation if the present page is not clear enough. The missing functions are missing because I've not used them yet. I can add them on request (a use case could be helpful for non-trivial ones).</p>
+
+<p>LUSE module itself is very basic, so I developed several other modules to help the development of a complete filesystem.</p>
+
+<p><em>errno</em> contains many constants representing POSIX error numbers. It also have an accessor to query the errno variable (which contains the last error number).</p>
+
+<p><em>userdata</em> can create and manipulate untyped userdata, to be used as buffers for read and write commands of the filesystem.</p>
+
+<p><em>posixio</em> is not strictly necessary, but it is very useful to implement many types of filesystem, which redirect I/O request to another filesystem. It contains bindings to many file and directory manipulation functions. Here again the read and write functions manipulate untyped userdata to keep overhead minimal.</p>
+
+<h2>Support</h2>
+
+<p>All support is done through the <a href="http://www.lua.org/lua-l.html">Lua mailing list</a>. If the traffic becomes too important a specialized mailing list will be created.</p>
+
+<p>Feel free to ask for further developments. I can't guarantee that I'll develop everything you ask, but I want my code to be as useful as possible, so I'll do my best to help you. You can also send me request or bug reports (for code and documentation) directly at <a href="mailto:jerome.vuarand@gmail.com">jerome.vuarand@gmail.com</a>.</p>
+
+<h2>Credits</h2>
+
+<p>This module is written and maintained by Jérôme Vuarand. It is inspired by <a href="http://code.google.com/p/luafuse/">luafuse</a> module by Gary Ng, but it has been rewritten completely from scratch.</p>
+
+<p>This website, LUSE downloadable packages and LUSE mailing list are generously hosted by <a href="http://luaforge.net/">Luaforge.net</a>. Consider making a donation.</p>
+
+<p>LUSE is available under a <a href="LICENSE.txt">MIT-style license</a>.</p>
+
+</div>
+
+<div class="chapter">
+<h1>2 - <a name="download">Download</a></h1>
+
+<p>LUSE sources are available in its <a href="http://piratery.net/hg/luse/">Mercurial repository</a>:</p>
+
+<pre><code>hg clone http://piratery.net/hg/luse/
+</code></pre>
+
+<p>Tarballs of the latest code can be downloaded directly from there: as <a href="http://piratery.net/hg/luse/archive/tip.tar.gz">gz</a>, <a href="http://piratery.net/hg/luse/archive/tip.tar.bz2">bz2</a> or <a href="http://piratery.net/hg/luse/archive/tip.zip">zip</a>.</p>
+
+<p>LUSE is also available on its <a href="http://luaforge.net/frs/?group_id=303">Luaforge project page</a>.</p>
+
+</div>
+
+<div class="chapter">
+<h1>3 - <a name="installation">Installation</a></h1>
+
+<p>To build LUSE edit config.mak and then run make in the top directory:</p>
+
+<pre><code>$ vi config.mak
+$ make
+$ make install
+</code></pre>
+
+<p>LUSE obviously depends on FUSE. It currently supports FUSE API versions 25 (FUSE 2.5.x and later) and 26 (FUSE 2.6.x and later). You can select a FUSE API version in the config.mak file.</p>
+
+</div>
+
+<div class="chapter" id="footer">
+<small>Last update: 2009-10-05 12:49:01 CEST</small>
+</div>
+
+</body>
+</html>
+
