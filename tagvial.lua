@@ -60,6 +60,7 @@ local filedb = {foo={spam=true}}
 local function gettaggedas(taglist)
     local results = {}
     for file,tagset in pairs(filedb) do
+        -- if no taglist given, all files are visible
         results[file] = true
         if taglist then
             for _,tag in ipairs(taglist) do
@@ -106,6 +107,10 @@ function fwfs:getattr(path, st)
     if not tags[last] then
         -- it is probably a file
         local pst = pio.new 'stat'
+        -- make sure that we don't consider files not in the current tagset
+        if last and not gettaggedas(tagset)[last] then
+            return -errno.ENOENT
+        end
         -- XXX FUGLY
         -- protection for the / dir
         last = last or ""
@@ -304,6 +309,7 @@ end
 fuse.main(args, fwfs)
 
 --[[
+Copyright (c) 2012 Thorben Krüger
 Copyright (c) 2007 Jérôme Vuarand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

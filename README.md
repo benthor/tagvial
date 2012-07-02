@@ -42,8 +42,11 @@ First Steps
 - account for these in "opendir" - DONE (what about getattr?)
 - create a function to filter path, to determine if a file in root is tagged this way - SEMI-DONE
 - don't map directory creation to the origin root any more but keep in memory - DONE
-- implement backend file"path" determination AND a way to split to the tag part - TODO
+- implement backend file"path" determination AND a way to split to the tag part - DONE
+- implement smart mknod, checking if filename exists, verifying have to distinguish between new files in the fs and retagged ones - TODO
+- find out how linking works - TODO
 - make directories/tags persistent over remounts - TODO
+- remove potential circularity of tags - TODO
 - figure out what to do next - TODO
 
 
