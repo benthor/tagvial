@@ -61,14 +61,24 @@ local function gettaggedas(taglist)
     local results = {}
     for file,tagset in pairs(filedb) do
         results[file] = true
-        for _,tag in ipairs(taglist) do
-            if not tagset[tag] then
-                results[file] = false
-                break
+        if taglist then
+            for _,tag in ipairs(taglist) do
+                if not tagset[tag] then
+                    results[file] = false
+                    break
+                end
             end
         end
     end
     return results
+end
+
+function smartsplit(path)
+    local tags = splitpath(path)
+    last = tags[#tags]
+    tags[#tags] = nil
+    if #tags == 0 then tags = nil end
+    return tags, last
 end
 
 local root = assert((...), "no root directory specified")
@@ -90,12 +100,7 @@ local fields = {'dev', 'ino', 'mode', 'nlink', 'uid', 'gid', 'rdev', 'size', 'at
 
 function fwfs:getattr(path, st)
     info("getattr! path->"..path)
-    local tagset = splitpath(path)
-    -- XXX FUGLY
-    local last = nil
-    if # tagset > 0 then
-        last = select(-1, unpack(tagset))
-    end
+    local tagset,last = smartsplit(path)
     -- FIXME, the loop protection should be included here as well
     -- if the last tag is not in the global tagset
     if not tags[last] then
@@ -205,13 +210,17 @@ end
 function fwfs:open(path, fi)
     info("open! path->"..path.." fi->"..tostring(fi))
     -- XXX is this elegant?
-    filename = select(-1, unpack(splitpath(path)))
-    local fd = pio.open(root.."/"..filename, fi.flags)
-    if fd==-1 then
-        return -errno.errno
+    tagset,filename = smartsplit(path)
+    if gettaggedas(tagset)[filename] then
+        local fd = pio.open(root.."/"..filename, fi.flags)
+        if fd==-1 then
+            return -errno.errno
+        end
+        fi.fh = #descriptors+1
+        descriptors[fi.fh] = {fd=fd, offset=0}
+    else
+        return -errno.ENOENT
     end
-    fi.fh = #descriptors+1
-    descriptors[fi.fh] = {fd=fd, offset=0}
 end
 
 

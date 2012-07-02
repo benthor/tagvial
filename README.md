@@ -40,8 +40,9 @@ First Steps
 - start from the "fwfs" example of "luse" - DONE
 - create dummy mkdir, creating volatile "directories" - DONE
 - account for these in "opendir" - DONE (what about getattr?)
-- create a function to filter path, to determine if a file in root is tagged this way - TODO
+- create a function to filter path, to determine if a file in root is tagged this way - SEMI-DONE
 - don't map directory creation to the origin root any more but keep in memory - DONE
+- implement backend file"path" determination AND a way to split to the tag part - TODO
 - make directories/tags persistent over remounts - TODO
 - figure out what to do next - TODO
 
