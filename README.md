@@ -17,7 +17,7 @@ Model
 View
 ----
 - all files are visible in the root
-- (hard) links into their tag directories
+- (hard) links into their tag directories (are hard links hard? maybe later)
 - subdirectory paths model the tag space
 - all possible tags are visible in all directories (for now, possibly already excluding the tags already part of the path)
 - addition of a file to a tag path tags it with all tags in the path, it is now accessible from any tag in the path. d'oh!
@@ -27,7 +27,21 @@ View
 
 Controller
 ----------
+- dir creation: "getattr (LOOKUP) /<newdir>" (waiting for error -2) -> "mkdir /<newdir>" -> "getattr /<newdir>"
+- dir listing: "getattr /" -> "opendir /" ( zsh: -> for all entries: "getattr <entry>") -> "releasedir" (paths always absolute internally!)
 
+Random Notes
+------------
+- getattr has a "stat" structure that it wants populated. funny way of doing things.
+- let's have a slight combinatorial explosion by storing all possible subtags of each tag
+
+First Steps
+-----------
+- start from the "fwfs" example of "luse" - DONE
+- implement flat directory structure: all directories visible in all directories - TODO
+- don't map directory creation to the origin root any more but keep in memory - TODO
+- make directories/tags persistent over remounts - TODO
+- figure out what to do next - TODO
 
 
 Corner Cases
@@ -37,3 +51,11 @@ Corner Cases
 Questions
 ---------
 - do dirs always have to be created manually(fuse limitation)? (I.e., does fuse do the same thing as plain "ls" to verify that dir is actually there? Or can we simply write to a non-existing dir and have our backend create it on the fly? (For now: manual creation)
+    - getattr might be the problem
+    - although ls does "opendir" and "readdir"
+
+- how to implement hard links?
+
+Future
+------
+- infer new tags without having to create them

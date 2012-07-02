@@ -13,211 +13,235 @@ local clean = "\27[0m"
 local verbose = true
 
 function info(msg)
-	if verbose then
-		print(green.."(!) "..msg..clean)
-	end
+    if verbose then
+        print(green.."(!) "..msg..clean)
+    end
 end
 
 function warning(msg)
-	if verbose then
-		print(yellow.."/!\\ "..msg..clean)
-	end
+    if verbose then
+        print(yellow.."/!\\ "..msg..clean)
+    end
 end
 
 function danger(msg)
-	if verbose then
-		print(red.."[!] "..msg..clean)
-	end
+    if verbose then
+        print(red.."[!] "..msg..clean)
+    end
 end
 
 local function mkset(array)
-	local set = {}
-	for _,flag in ipairs(array) do
-		set[flag] = true
-	end
-	return set
+    local set = {}
+    for _,flag in ipairs(array) do
+        set[flag] = true
+    end
+    return set
 end
+
+local function splitpath(path)
+    local elemets = {}
+    for element in path:gmatch("[^/]+") do 
+        table.insert(elements, element)
+    end
+    return elements
+end
+
+local function mkset(array)
+    local set = {}
+    for _,flag in ipairs(array) do
+        set[flag] = true
+    end
+    return set
+end
+
+local root = {}
+
+local function gettag()
+
+end
+
 
 local root = assert((...), "no root directory specified")
 
 -- when the process is detached from the console, its directory changed, so we
 -- make sure root is an absolute path
 if root:sub(1,1)~='/' then
-	local buf = udata.new(pio.PATH_MAX)
-	assert(pio.getcwd(buf.data, buf.size)==buf.data)
-	buf = tostring(buf)
-	buf = buf:sub(1, buf:find('%z')-1)
-	root = tostring(buf).."/"..root
-	buf = nil
+    local buf = udata.new(pio.PATH_MAX)
+    assert(pio.getcwd(buf.data, buf.size)==buf.data)
+    buf = tostring(buf)
+    buf = buf:sub(1, buf:find('%z')-1)
+    root = tostring(buf).."/"..root
+    buf = nil
 end
 
 local fwfs = {}
 
 local fields = {'dev', 'ino', 'mode', 'nlink', 'uid', 'gid', 'rdev', 'size', 'atime', 'mtime', 'ctime', 'blksize', 'blocks'}
+
 function fwfs:getattr(path, st)
-	info("getattr! path->"..path)
-	local pst = pio.new 'stat'
-	if pio.stat(root..path, pst)~=0 then
-		return -errno.errno
-	end
-	for _,k in ipairs(fields) do
-		st[k] = pst[k]
-	end
+    info("getattr! path->"..path)
+    local pst = pio.new 'stat'
+    if pio.stat(root..path, pst)~=0 then
+        return -errno.errno
+    end
+    for _,k in ipairs(fields) do
+        st[k] = pst[k]
+    end
 end
 
 local descriptors = {}
 
 function fwfs:mkdir(path, mode)
-	info("mkdir! path->"..path.." mode->"..tostring(mode))
-	if pio.mkdir(root..path, mode)~=0 then
-		return -errno.errno
-	end
+    info("mkdir! path->"..path.." mode->"..tostring(mode))
+    if pio.mkdir(root..path, mode)~=0 then
+        return -errno.errno
+    end
 end
 
 function fwfs:rmdir(path)
-	info("rmdir! path->"..path)
-	if pio.rmdir(root..path)~=0 then
-		return -errno.errno
-	end
+    info("rmdir! path->"..path)
+    if pio.rmdir(root..path)~=0 then
+        return -errno.errno
+    end
 end
 
 function fwfs:opendir(path, fi)
-	info("opendir! path->"..path.." fi->"..udata.tostring(fi))
-	local dir = pio.opendir(root..path)
-	if not dir then
-		return -errno.errno
-	end
-	fi.fh = #descriptors+1
-	descriptors[fi.fh] = {dir=dir}
+    info("opendir! path->"..path.." fi->"..udata.tostring(fi))
+    local dir = pio.opendir(root..path)
+    if not dir then
+        return -errno.errno
+    end
+    fi.fh = #descriptors+1
+    descriptors[fi.fh] = {dir=dir}
 end
 
 function fwfs:releasedir(path, fi)
-	info("releasedir! path->"..path.." fi->"..udata.tostring(fi))
-	if fi.fh~=0 then
-		descriptors[fi.fh].dir:closedir()
-		descriptors[fi.fh] = nil
-	else
-		return -errno.EINVAL
-	end
+    info("releasedir! path->"..path.." fi->"..udata.tostring(fi))
+    if fi.fh~=0 then
+        descriptors[fi.fh].dir:closedir()
+        descriptors[fi.fh] = nil
+    else
+        return -errno.EINVAL
+    end
 end
 
 function fwfs:readdir(path, filler, offset, fi)
         -- filler: function value
         -- fi: userdata
-	info("readdir! path->"..path.." offset->"..offset.." fi->"..udata.tostring(fi))
-	if fi.fh~=0 then
-		local dir = descriptors[fi.fh].dir
-		repeat
-			local entry = dir:readdir()
-			if entry then
+    info("readdir! path->"..path.." offset->"..offset.." fi->"..udata.tostring(fi))
+    if fi.fh~=0 then
+        local dir = descriptors[fi.fh].dir
+        repeat
+            local entry = dir:readdir()
+            if entry then
                                 info("----------- entry->"..entry.name)
-				filler(entry.name, nil, 0)
-			end
-		until not entry
-	end
+                filler(entry.name, nil, 0)
+            end
+        until not entry
+    end
 end
 
 function fwfs:mknod(path, mode, dev)
-	info("mknod! path->"..path.." mode->"..tostring(mode).." dev->"..dev)
-	if pio.mknod(root..path, mode, dev)~=0 then
-		return -errno.errno
-	end
+    info("mknod! path->"..path.." mode->"..tostring(mode).." dev->"..dev)
+    if pio.mknod(root..path, mode, dev)~=0 then
+        return -errno.errno
+    end
 end
 
 function fwfs:unlink(path)
-	info("unlink! path->"..path)
-	if pio.unlink(root..path)~=0 then
-		return -errno.errno
-	end
+    info("unlink! path->"..path)
+    if pio.unlink(root..path)~=0 then
+        return -errno.errno
+    end
 end
 
 function fwfs:open(path, fi)
-	info("open! path->"..path.." fi->"..tostring(fi))
-	local fd = pio.open(root..path, fi.flags)
-	if fd==-1 then
-		return -errno.errno
-	end
-	fi.fh = #descriptors+1
-	descriptors[fi.fh] = {fd=fd, offset=0}
+    info("open! path->"..path.." fi->"..tostring(fi))
+    local fd = pio.open(root..path, fi.flags)
+    if fd==-1 then
+        return -errno.errno
+    end
+    fi.fh = #descriptors+1
+    descriptors[fi.fh] = {fd=fd, offset=0}
 end
 
 
 function fwfs:release(path, fi)
-	info("release! path->"..path.." fi->"..tostring(fi))
-	if fi.fh~=0 then
-		pio.close(descriptors[fi.fh].fd)
-		descriptors[fi.fh] = nil
-	else
-		return -errno.EINVAL
-	end
+    info("release! path->"..path.." fi->"..tostring(fi))
+    if fi.fh~=0 then
+        pio.close(descriptors[fi.fh].fd)
+        descriptors[fi.fh] = nil
+    else
+        return -errno.EINVAL
+    end
 end
 
 function fwfs:read(path, buf, size, offset, fi)
-	info("read: offset="..offset.." size="..size)
-	if fi.fh~=0 then
-		local descriptor = descriptors[fi.fh]
-		if descriptor.offset~=offset then
-			pio.lseek(descriptor.fd, offset, 'SET')
-			descriptor.offset = offset
-		end
-		size = pio.read(descriptor.fd, buf, size)
-		descriptor.offset = descriptor.offset + size
-		return size
-	else
-		return -errno.EINVAL
-	end
+    info("read: offset="..offset.." size="..size)
+    if fi.fh~=0 then
+        local descriptor = descriptors[fi.fh]
+        if descriptor.offset~=offset then
+            pio.lseek(descriptor.fd, offset, 'SET')
+            descriptor.offset = offset
+        end
+        size = pio.read(descriptor.fd, buf, size)
+        descriptor.offset = descriptor.offset + size
+        return size
+    else
+        return -errno.EINVAL
+    end
 end
 
 function fwfs:write(path, buf, size, offset, fi)
-	info("write: offset="..offset.." size="..size)
-	if fi.fh~=0 then
-		local descriptor = descriptors[fi.fh]
-		if descriptor.offset~=offset then
-			warning("seeking")
-			pio.lseek(descriptor.fd, offset, 'SET')
-			descriptor.offset = offset
-		end
-		size = pio.write(descriptor.fd, buf, size)
-		descriptor.offset = descriptor.offset + size
-		return size
-	else
-		return -errno.EINVAL
-	end
+    info("write: offset="..offset.." size="..size)
+    if fi.fh~=0 then
+        local descriptor = descriptors[fi.fh]
+        if descriptor.offset~=offset then
+            warning("seeking")
+            pio.lseek(descriptor.fd, offset, 'SET')
+            descriptor.offset = offset
+        end
+        size = pio.write(descriptor.fd, buf, size)
+        descriptor.offset = descriptor.offset + size
+        return size
+    else
+        return -errno.EINVAL
+    end
 end
 
 local fields = {'bsize', 'frsize', 'blocks', 'bfree', 'bavail', 'files', 'ffree', 'favail', 'fsid', 'flag', 'namemax'}
 function fwfs:statfs(path, st)
     info("statfs! path->"..path.." st->"..tostring(st))
-	local pst = pio.new 'statvfs'
-	if pio.statvfs(root..path, pst)~=0 then
-		return -errno.errno
-	end
-	local pbsize = pst.bsize
-	for _,k in ipairs(fields) do
-		st[k] = pst[k]
-	end
+    local pst = pio.new 'statvfs'
+    if pio.statvfs(root..path, pst)~=0 then
+        return -errno.errno
+    end
+    local pbsize = pst.bsize
+    for _,k in ipairs(fields) do
+        st[k] = pst[k]
+    end
 end
 
 function fwfs:utimens(path, time)
-	info("utimens('"..path.."', {{sec="..time[1].sec..", nsec="..time[1].nsec.."}, {sec="..time[2].sec..", nsec="..time[2].nsec.."}})")
-	local times = pio.new('timeval', 2)
-	times[1].sec = time[1].sec
-	times[1].usec = time[1].nsec / 1000
-	times[2].sec = time[2].sec
-	times[2].usec = time[2].nsec / 1000
-	return pio.utimes(root..path, times)
+    info("utimens('"..path.."', {{sec="..time[1].sec..", nsec="..time[1].nsec.."}, {sec="..time[2].sec..", nsec="..time[2].nsec.."}})")
+    local times = pio.new('timeval', 2)
+    times[1].sec = time[1].sec
+    times[1].usec = time[1].nsec / 1000
+    times[2].sec = time[2].sec
+    times[2].usec = time[2].nsec / 1000
+    return pio.utimes(root..path, times)
 end
 
 function fwfs:rename(oldpath, newpath)
     info("rename! oldpath->"..oldpath.." newpath->"..newpath)
-	return pio.rename(root..oldpath, root..newpath)
+    return pio.rename(root..oldpath, root..newpath)
 end
 
 local args = {"fwfs", select(2, ...)}
 for _,arg in ipairs(args) do
-	if arg=='-d' then
-		verbose = true
-	end
+    if arg=='-d' then
+        verbose = true
+    end
 end
 fuse.main(args, fwfs)
 
