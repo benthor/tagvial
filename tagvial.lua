@@ -74,7 +74,16 @@ local function gettaggedas(taglist)
     return results
 end
 
-function smartsplit(path)
+local function addtags(taglist, filename)
+    local entry = filedb[filename] or {}
+    for _,tag in ipairs(taglist) do
+        if not tags[tag] then tags[tag] = {} end
+        entry[tag] = true
+    end
+    filedb[filename] = entry
+end
+
+local function smartsplit(path)
     local tags = splitpath(path)
     last = tags[#tags]
     tags[#tags] = nil
@@ -200,9 +209,11 @@ end
 
 function fwfs:mknod(path, mode, dev)
     info("mknod! path->"..path.." mode->"..tostring(mode).." dev->"..dev)
-    if pio.mknod(root..path, mode, dev)~=0 then
+    local taglist,filename = smartsplit(path)
+    if pio.mknod(root.."/"..filename, mode, dev)~=0 then
         return -errno.errno
     end
+    addtags(taglist,filename)
 end
 
 function fwfs:unlink(path)
@@ -215,8 +226,8 @@ end
 function fwfs:open(path, fi)
     info("open! path->"..path.." fi->"..tostring(fi))
     -- XXX is this elegant?
-    tagset,filename = smartsplit(path)
-    if gettaggedas(tagset)[filename] then
+    local taglist,filename = smartsplit(path)
+    if gettaggedas(taglist)[filename] then
         local fd = pio.open(root.."/"..filename, fi.flags)
         if fd==-1 then
             return -errno.errno
