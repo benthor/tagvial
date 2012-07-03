@@ -311,29 +311,36 @@ function fwfs:rename(oldpath, newpath)
     local oldtags,oldlast = smartsplit(oldpath)
     local newtags,newlast = smartsplit(newpath)
     -- check if source and destination are both files
-    if filedb[oldlast] and filedb[newlast] then
-        -- if filenames are equal
-        if oldlast == newlast then
-            -- we only need to retag
-            local tagset = filedb[oldlast]
-            for _,otag in ipairs(oldtags or {}) do
-                tagset[otag] = false
+    if filedb[oldlast] then
+        if filedb[newlast] then
+            -- if filenames are equal
+            if oldlast == newlast then
+                -- we only need to retag
+                local tagset = filedb[oldlast]
+                for _,otag in ipairs(oldtags or {}) do
+                    tagset[otag] = false
+                end
+                for _,ntag in ipairs(newtags or {}) do
+                    tagset[ntag] = true
+                end
+                -- equivalent to filedb[oldlast] = tagset but hey
+                filedb[newlast] = tagset
+                
+            else
+                -- don't permit overwriting of existing files
+                return -errno.EEXIST
             end
-            for _,ntag in ipairs(newtags or {}) do
-                tagset[ntag] = true
-            end
-            -- equivalent to filedb[oldlast] = tagset but hey
-            filedb[newlast] = tagset
         else
-            -- don't permit overwriting of existing files
-            return -errno.EEXIST
+            -- if the target filename is nonexisting
+            -- we do a true renaming. discard all old tags and add the new
+            filedb[oldlast] = nil
+            filedb[newlast] = mkset(newtags or {})
+            return pio.rename(root.."/"..oldlast, root.."/"..newlast)
         end
     else
         -- don't permit renaming of tag paths for now
         return -errno.EACCES
     end
-
-    -- return pio.rename(root..oldpath, root..newpath)
 end
 
 local args = {"fwfs", select(2, ...)}
