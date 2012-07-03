@@ -27,39 +27,46 @@ Random Notes
 - let's have a slight combinatorial explosion by storing all possible subtags of each tag
 - maybe we'll have to mount in 2 different modes. one for editing and one for adding. can't distinguish between stuff coming in and stuff being copied internally
 
-First Steps
------------
+DONE
+----
 - start from the "fwfs" example of "luse" - DONE
 - create dummy mkdir, creating volatile "directories" - DONE
 - account for these in "opendir" - DONE (what about getattr?)
-- create a function to filter path, to determine if a file in root is tagged this way - SEMI-DONE
 - don't map directory creation to the origin root any more but keep in memory - DONE
 - implement backend file"path" determination AND a way to split to the tag part - DONE
-- implement smart mknod, checking if filename exists, verifying have to distinguish between new files in the fs and retagged ones - TODO
-- implement rename with retagging semantics - MOSTLY-DONE
 - implement rename for files - DONE
 - implement remove for files with tagging semantics - DONE
 - implement rmdir with tagging semantics - DONE
-- introduce limbo for files being copied with already existing name in backed - TODO? - maybe stick to mv for now
-- bytewise compare files from limbo that are written to with content the file with that name has in backend - TODO
 - fix the bug that you can't put new files into the root - DONE
-- fix ordering of readdir output to put tags first - TODO (is it possible?)
-- find out how linking works - TODO
 - make directories/tags persistent over remounts - DONE
 - remove potential circularity of tags - DONE
+- figure out how to treat files and tags with name clashes - DONE 
+
+SEMI-DONE
+-----------
+- create a function to filter path, to determine if a file in root is tagged this way - SEMI-DONE
+- implement rename with retagging semantics - MOSTLY-DONE
+
+TODO
+----
+- add configurable behavior - TODO
+- implement smart mknod, checking if filename exists, verifying have to distinguish between new files in the fs and retagged ones - TODO
+- introduce limbo for files being copied with already existing name in backed - TODO? - maybe stick to mv for now
+- bytewise compare files from limbo that are written to with content the file with that name has in backend - TODO
+- fix ordering of readdir output to put tags first - TODO (is it possible?)
 - make document root readonly, only display files already tagged - TODO
+- find out how linking works - TODO
 - make removal of files not depend on currently invisible tags - TODO
 - figure out what to do when renaming a tagpath to another one - TODO
-- figure out how to treat files and tags with name clashes - DONE 
 - figure out if you can mount fuse on top of the backend directory - TODO - most likely impossibru due to recursion
 - find out if there is a way to abort mounting to print out warnings about mountpoint or backenddir - TODO
 - maybe put all files not into root but into special tag 'ALL' including untagged ones - TODO
 - add correct link counts in tags - TODO
 - maybe make complete deletion of file in case it doesn't have any tags any more optional - TODO
-- add configurable behavior - TODO
 - rename this file to NOTES.md - TODO
 - create proper README.md - TODO
 - figure out what to do next - TODO
+
 
 
 Desired Configurable Behavior
