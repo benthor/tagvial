@@ -51,10 +51,10 @@ First Steps
 - introduce limbo for files being copied with already existing name in backed - TODO? - maybe stick to mv for now
 - bytewise compare files from limbo that are written to with content the file with that name has in backend - TODO
 - fix the bug that you can't put new files into the root - DONE
-- fix ordering of readdir output to put tags first
+- fix ordering of readdir output to put tags first - TODO (is it possible?)
 - find out how linking works - TODO
-- make directories/tags persistent over remounts - TODO
-- remove potential circularity of tags - TODO
+- make directories/tags persistent over remounts - DONE
+- remove potential circularity of tags - DONE
 - make document root readonly, only display files already tagged - TODO
 - figure out what to do when renaming a tagpath to another one - TODO
 - figure out how to treat files and tags with name clashes - TODO

@@ -58,9 +58,9 @@ end
 require 'persistence'
 
 local dbname = '.db.lua'
+-- local dbname = '.tagvialdb.lua'
 
 local root = assert((...), "no root directory specified")
-
 
 -- when the process is detached from the console, its directory changed, so we
 -- make sure root is an absolute path
@@ -207,10 +207,13 @@ function fwfs:readdir(path, filler, offset, fi)
         -- fi: userdata
     info("readdir! path->"..path.." offset->"..offset.." fi->"..udata.tostring(fi))
     if fi.fh~=0 then
-        -- contains all tags (for now):
+        -- remove those tags already in the tagpath
+        local pathtags = mkset(splitpath(path))
         for tag,_ in pairs(tags) do
-            info("----------- entry->"..tag)
-            filler(tag, nil, 0)
+            if not pathtags[tag] then
+                info("----------- entry->"..tag)
+                filler(tag, nil, 0)
+            end
         end
         local dir = pio.opendir(root)
         local files = gettaggedas(descriptors[fi.fh].dir)
