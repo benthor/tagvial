@@ -34,6 +34,7 @@ Random Notes
 ------------
 - getattr has a "stat" structure that it wants populated. funny way of doing things.
 - let's have a slight combinatorial explosion by storing all possible subtags of each tag
+- maybe we'll have to mount in 2 different modes. one for editing and one for adding. can't distinguish between stuff coming in and stuff being copied internally
 
 First Steps
 -----------
@@ -44,9 +45,16 @@ First Steps
 - don't map directory creation to the origin root any more but keep in memory - DONE
 - implement backend file"path" determination AND a way to split to the tag part - DONE
 - implement smart mknod, checking if filename exists, verifying have to distinguish between new files in the fs and retagged ones - TODO
+- implement rename with retagging semantics - TODO
+- introduce limbo for files being copied with already existing name in backed - TODO
+- bytewise compare files from limbo that are written to with content the file with that name has in backend - TODO
+- fix the bug that you can't put new files into the root - DONE
 - find out how linking works - TODO
 - make directories/tags persistent over remounts - TODO
 - remove potential circularity of tags - TODO
+- make document root readonly, only display files already tagged - TODO
+- figure out what to do when renaming a tagpath to another one - TODO
+- figure out how to treat files and tags with name clashes - TODO
 - figure out what to do next - TODO
 
 

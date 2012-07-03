@@ -62,12 +62,10 @@ local function gettaggedas(taglist)
     for file,tagset in pairs(filedb) do
         -- if no taglist given, all files are visible
         results[file] = true
-        if taglist then
-            for _,tag in ipairs(taglist) do
-                if not tagset[tag] then
-                    results[file] = false
-                    break
-                end
+        for _,tag in ipairs(taglist or {}) do
+            if not tagset[tag] then
+                results[file] = false
+                break
             end
         end
     end
@@ -76,7 +74,8 @@ end
 
 local function addtags(taglist, filename)
     local entry = filedb[filename] or {}
-    for _,tag in ipairs(taglist) do
+    -- be resilient against nil taglists
+    for _,tag in ipairs(taglist or {}) do
         if not tags[tag] then tags[tag] = {} end
         entry[tag] = true
     end
@@ -210,6 +209,7 @@ end
 function fwfs:mknod(path, mode, dev)
     info("mknod! path->"..path.." mode->"..tostring(mode).." dev->"..dev)
     local taglist,filename = smartsplit(path)
+    -- this currently prevents copying an already tagged file to another tag path XXX -> figure out if we can do "fwfs:create" and simply compare blocks with data to write and already existing file. if not equal, throw error
     if pio.mknod(root.."/"..filename, mode, dev)~=0 then
         return -errno.errno
     end
@@ -308,7 +308,32 @@ end
 
 function fwfs:rename(oldpath, newpath)
     info("rename! oldpath->"..oldpath.." newpath->"..newpath)
-    return pio.rename(root..oldpath, root..newpath)
+    local oldtags,oldlast = smartsplit(oldpath)
+    local newtags,newlast = smartsplit(newpath)
+    -- check if source and destination are both files
+    if filedb[oldlast] and filedb[newlast] then
+        -- if filenames are equal
+        if oldlast == newlast then
+            -- we only need to retag
+            local tagset = filedb[oldlast]
+            for _,otag in ipairs(oldtags or {}) do
+                tagset[otag] = false
+            end
+            for _,ntag in ipairs(newtags or {}) do
+                tagset[ntag] = true
+            end
+            -- equivalent to filedb[oldlast] = tagset but hey
+            filedb[newlast] = tagset
+        else
+            -- don't permit overwriting of existing files
+            return -errno.EEXIST
+        end
+    else
+        -- don't permit renaming of tag paths for now
+        return -errno.EACCES
+    end
+
+    -- return pio.rename(root..oldpath, root..newpath)
 end
 
 local args = {"fwfs", select(2, ...)}
