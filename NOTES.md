@@ -97,3 +97,4 @@ Future
 - make undelete of directories/tags possible -> it's easy
 - it is possible to only make tags deletable individualy (i.e., only in the root) -> is this a good idea maybe?
 - allow name clashes in filenames, just don't display (or display with some numbered prefix) them unless the tagpath is unique
+- write a visual frontend using link counts as hints for tagsize

@@ -4,7 +4,7 @@
 ## Notes ##
 - *The implementation is woefully incomplete, do not use!*
     - (That said, the basics are already working)
-- You see here the fruits of about two evenings of *deep-hacking-mode* so far
+- You see here only the fruits of about two evenings of deep-hacking-mode so far, way more to come.
 
 ## Overview ##
 
@@ -21,15 +21,28 @@ The user creates a directory in the root of the filesystem for each tag he wants
 - adding tags via mkdir
 - removing tags vir rmdir
 - undelete of tags (by doing mkdir of previously rmdir'd tag)
+    - configurable alternative of true delete in the future
 - renaming of files
 - removing of files from tags or completely (via 'rm')
+    - exact behavior configurable in the future
 - retagging of files via "rename" (i.e., "mv")
 - appropriate errors raised if naming clashes occur in files or directories
-- persistent database (as plain .lua file in backend directory)
+- proper unmounting is actually not needed
+    - persistent database (as plain .lua file in backend directory), gets updated on every transaction
+    - all files stored in a single "normal" dir in the backed
+
+### Most Important Non-working Stuff ###
+
+- no configurable behavior yet
+    - the next thing on the list, promise
+- copy of an already tagged file into a directory doesn't add the tag
+    - will produce a "file exists"-error
+    - for now use 'mv'
+- no links, no proper file attributes, no permissions
 
 ### Credits ###
 
-tagvial is implemented using Jérôme Vuarand's excellent [fuse](http://fuse.sourceforge.net/) [bindings](http://luse.luaforge.net/) for [Lua](http://lua.org). I ([benthor](https://github.org/benthor)) heavily based this alpha implementation on some [example code](http://luse.luaforge.net/fwfs.lua) of his.
+tagvial is implemented using Jérôme Vuarand's excellent [fuse](http://fuse.sourceforge.net/) [bindings](http://luse.luaforge.net/) for [Lua](http://lua.org) (included here for convenience). I ([benthor](https://github.org/benthor)) heavily based this alpha implementation on some [example code](http://luse.luaforge.net/fwfs.lua) of his.
 
 ## Usage ##
 *Much of this will change once I have implemented advanced configuraiton options*
@@ -54,4 +67,7 @@ To unmount, use
 
 ## ToDo ##
 - add a more conserviative default config
-- loads
+- loads of other stuff
+
+## Bugs ##
+- also probably loads, although your data should about as safe as your backend filesystem
