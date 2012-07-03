@@ -83,6 +83,8 @@ local f = io.open(root .. '/' .. dbname, 'r')
 if f~= nil then 
     io.close(f)
     tags,filedb = persistence.load(root ..'/'.. dbname)
+else
+    warning("database not found, creating a new one")
 end
 
 local function gettaggedas(taglist)
@@ -159,6 +161,10 @@ function fwfs:mkdir(path, mode)
     path = splitpath(path)
     -- XXX I wonder what happens if we don't check for presence
     for _,tag in ipairs(path) do
+        -- if we have a filename of this name already
+        if filedb[tag] then
+            return -errno.EEXIST
+        end
         if not tags[tag] then
             tags[tag] = {}
         end
@@ -172,9 +178,13 @@ end
 
 function fwfs:rmdir(path)
     info("rmdir! path->"..path)
-    if pio.rmdir(root..path)~=0 then
-        return -errno.errno
+    taglist = splitpath(path)
+    for _,tag in ipairs(taglist) do
+        tags[tag] = nil
     end
+    -- TODO, also cleanup filedb entries
+    -- if we don't do this, we can "undelete" by just mkdiring the 
+    -- tag name again. or claim this is a feature. or make configable
 end
 
 function fwfs:opendir(path, fi)
@@ -241,12 +251,24 @@ function fwfs:unlink(path)
     info("unlink! path->"..path)
     local taglist, filename = smartsplit(path)
     local entry = filedb[filename]
+
+    -- in case of trying to delete nonexisting entry
+    -- (also prevents from accidentally deleting the database file)
     if not entry then
         return -errno.ENOENT
     end
-    for _,tag in ipairs(taglist or {}) do
+
+    -- in case we try to delete from the root
+    if not taglist then
+        return -errno.EACCES
+    end
+
+    -- remove tags one by one
+    for _,tag in ipairs(taglist) do
         entry[tag] = false
     end
+
+    -- check if file has any tags left
     for _, value in pairs(entry) do
         if value then
             -- we found a still existing tag
@@ -254,7 +276,8 @@ function fwfs:unlink(path)
             return
         end
     end
-    -- if we get to this point, the file is to be deleted
+
+    -- if we get to this point, the file has no tags any more and is to be deleted
     -- TODO in case we worry about permissions this is too quick
     filedb[filename] = nil
     if pio.unlink(root..'/'..filename)~=0 then

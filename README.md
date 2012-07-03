@@ -1,12 +1,8 @@
 DESIGN
 ======
 
-Notes
------
-I _know_ MVC is riddiculously overhyped. I am merely attempting to find some merits in it by specifying my toy filesystem adhering to the concept. I basically want to see what it's all about. 
 
-
-Model
+Backend
 -----
 - use one directory plus database file (valid .lua file or sqlite db) as backend
 - all files are stored in this single directory, hence file names must be unique
@@ -14,7 +10,7 @@ Model
 - possible to map tagged structure to normal directory tree as well (maybe later? combinatorial explosion? hard links?)
 - permissions don't change per tag space
 
-View
+Frontend
 ----
 - all files are visible in the root
 - (hard) links into their tag directories (are hard links hard? maybe later)
@@ -24,11 +20,6 @@ View
 - deletion of a file in a tag path deletes all tags from said file
 - deletion of a file from all tags it carries deletes it completely (optional: leave it in the backend for now, or tag it as "trash")
 - the view (if at all easily possible) should keep the semantics of hard links to the root visible
-
-Controller
-----------
-- dir creation: "getattr (LOOKUP) /<newdir>" (waiting for error -2) -> "mkdir /<newdir>" -> "getattr /<newdir>"
-- dir listing: "getattr /" -> "opendir /" ( zsh: -> for all entries: "getattr <entry>") -> "releasedir" (paths always absolute internally!)
 
 Random Notes
 ------------
@@ -47,8 +38,8 @@ First Steps
 - implement smart mknod, checking if filename exists, verifying have to distinguish between new files in the fs and retagged ones - TODO
 - implement rename with retagging semantics - MOSTLY-DONE
 - implement rename for files - DONE
-- implement remove for files with tagging semantics - TODO
-- implement rmdir with tagging semantics - TODO
+- implement remove for files with tagging semantics - DONE
+- implement rmdir with tagging semantics - DONE
 - introduce limbo for files being copied with already existing name in backed - TODO? - maybe stick to mv for now
 - bytewise compare files from limbo that are written to with content the file with that name has in backend - TODO
 - fix the bug that you can't put new files into the root - DONE
@@ -57,17 +48,39 @@ First Steps
 - make directories/tags persistent over remounts - DONE
 - remove potential circularity of tags - DONE
 - make document root readonly, only display files already tagged - TODO
+- make removal of files not depend on currently invisible tags - TODO
 - figure out what to do when renaming a tagpath to another one - TODO
-- figure out how to treat files and tags with name clashes - TODO
+- figure out how to treat files and tags with name clashes - DONE 
 - figure out if you can mount fuse on top of the backend directory - TODO - most likely impossibru due to recursion
 - find out if there is a way to abort mounting to print out warnings about mountpoint or backenddir - TODO
 - maybe put all files not into root but into special tag 'ALL' including untagged ones - TODO
+- add correct link counts in tags - TODO
+- maybe make complete deletion of file in case it doesn't have any tags any more optional - TODO
+- add configurable behavior - TODO
+- rename this file to NOTES.md - TODO
+- create proper README.md - TODO
 - figure out what to do next - TODO
+
+
+Desired Configurable Behavior
+-----------------------------
+- maybe as one option
+    - tag removal only in the root (otherwise permission denied)
+        - alternative: rmdir in tagpath removes all tags from path
+    - complete file removal only in root (otherwise permission denied)
+        - alternative: rm in tagpath removes also file if file has no more tags
+- deleting a tag and reinstating it causes "undelete", yes/no?
+    - (hint: to permanently delete all files form a tag do rm /tag/\*, or rm -rf /tag/\*)
+- deleting a file that has tags in the root removes it, yes/no?
+    - this clashes with "undelete" function above, at least for now
+
+
 
 
 Corner Cases
 ------------
 - what happens if in the backend directory there is a file which doesn't show up in the db? will it be invisible but impossible to create? will it be there but untagged? (maybe in an "untagged" dir?)
+
 
 Questions
 ---------
@@ -79,6 +92,8 @@ Questions
 
 Future
 ------
-- infer new tags without having to create them
+- infer new tags without having to create them from the path that is explored by getattr (unlikely that this will work)
 - for now, we ignore all files in subdirectories possibly present in the backend dir. maybe do something smart here?
-
+- make undelete of directories/tags possible -> it's easy
+- it is possible to only make tags deletable individualy (i.e., only in the root) -> is this a good idea maybe?
+- allow name clashes in filenames, just don't display (or display with some numbered prefix) them unless the tagpath is unique
