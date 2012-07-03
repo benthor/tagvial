@@ -45,16 +45,22 @@ First Steps
 - don't map directory creation to the origin root any more but keep in memory - DONE
 - implement backend file"path" determination AND a way to split to the tag part - DONE
 - implement smart mknod, checking if filename exists, verifying have to distinguish between new files in the fs and retagged ones - TODO
-- implement rename with retagging semantics - TODO
-- introduce limbo for files being copied with already existing name in backed - TODO
+- implement rename with retagging semantics - MOSTLY-DONE
+- implement rename for files - DONE
+- implement remove for files with tagging semantics - TODO
+- introduce limbo for files being copied with already existing name in backed - TODO? - maybe stick to mv for now
 - bytewise compare files from limbo that are written to with content the file with that name has in backend - TODO
 - fix the bug that you can't put new files into the root - DONE
+- fix ordering of readdir output to put tags first
 - find out how linking works - TODO
 - make directories/tags persistent over remounts - TODO
 - remove potential circularity of tags - TODO
 - make document root readonly, only display files already tagged - TODO
 - figure out what to do when renaming a tagpath to another one - TODO
 - figure out how to treat files and tags with name clashes - TODO
+- figure out if you can mount fuse on top of the backend directory - TODO - most likely impossibru due to recursion
+- find out if there is a way to abort mounting to print out warnings about mountpoint or backenddir - TODO
+- maybe put all files not into root but into special tag 'ALL' including untagged ones - TODO
 - figure out what to do next - TODO
 
 

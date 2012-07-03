@@ -5,6 +5,7 @@ local errno = require 'luse.errno'
 local pio = require 'luse.posixio'
 
 
+
 local red = "\27[31m"
 local green = "\27[32m"
 local yellow = "\27[33m"
@@ -54,8 +55,35 @@ local function mkset(array)
     return set
 end
 
-local tags = {spam={}}
-local filedb = {foo={spam=true}}
+require 'persistence'
+
+local dbname = '.db.lua'
+
+local root = assert((...), "no root directory specified")
+
+
+-- when the process is detached from the console, its directory changed, so we
+-- make sure root is an absolute path
+if root:sub(1,1)~='/' then
+    local buf = udata.new(pio.PATH_MAX)
+    assert(pio.getcwd(buf.data, buf.size)==buf.data)
+    buf = tostring(buf)
+    buf = buf:sub(1, buf:find('%z')-1)
+    root = tostring(buf).."/"..root
+    buf = nil
+end
+
+local tags, filedb = {}, {}
+
+local function savedb()
+    persistence.store(root .. '/' .. dbname, tags, filedb)
+end
+
+local f = io.open(root .. '/' .. dbname, 'r')
+if f~= nil then 
+    io.close(f)
+    tags,filedb = persistence.load(root ..'/'.. dbname)
+end
 
 local function gettaggedas(taglist)
     local results = {}
@@ -80,6 +108,7 @@ local function addtags(taglist, filename)
         entry[tag] = true
     end
     filedb[filename] = entry
+    savedb()
 end
 
 local function smartsplit(path)
@@ -88,19 +117,6 @@ local function smartsplit(path)
     tags[#tags] = nil
     if #tags == 0 then tags = nil end
     return tags, last
-end
-
-local root = assert((...), "no root directory specified")
-
--- when the process is detached from the console, its directory changed, so we
--- make sure root is an absolute path
-if root:sub(1,1)~='/' then
-    local buf = udata.new(pio.PATH_MAX)
-    assert(pio.getcwd(buf.data, buf.size)==buf.data)
-    buf = tostring(buf)
-    buf = buf:sub(1, buf:find('%z')-1)
-    root = tostring(buf).."/"..root
-    buf = nil
 end
 
 local fwfs = {}
@@ -147,6 +163,8 @@ function fwfs:mkdir(path, mode)
             tags[tag] = {}
         end
     end
+    -- write to db
+    savedb()
     --if pio.mkdir(root..path, mode)~=0 then
         --return -errno.errno
     --end
@@ -320,11 +338,13 @@ function fwfs:rename(oldpath, newpath)
                 for _,otag in ipairs(oldtags or {}) do
                     tagset[otag] = false
                 end
+                -- XXX maybe use addtags method here
                 for _,ntag in ipairs(newtags or {}) do
                     tagset[ntag] = true
                 end
                 -- equivalent to filedb[oldlast] = tagset but hey
                 filedb[newlast] = tagset
+                savedb()
                 
             else
                 -- don't permit overwriting of existing files
@@ -335,6 +355,8 @@ function fwfs:rename(oldpath, newpath)
             -- we do a true renaming. discard all old tags and add the new
             filedb[oldlast] = nil
             filedb[newlast] = mkset(newtags or {})
+            -- TODO, don't save the new state when pio.rename fails
+            savedb()
             return pio.rename(root.."/"..oldlast, root.."/"..newlast)
         end
     else
