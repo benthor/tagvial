@@ -48,6 +48,7 @@ First Steps
 - implement rename with retagging semantics - MOSTLY-DONE
 - implement rename for files - DONE
 - implement remove for files with tagging semantics - TODO
+- implement rmdir with tagging semantics - TODO
 - introduce limbo for files being copied with already existing name in backed - TODO? - maybe stick to mv for now
 - bytewise compare files from limbo that are written to with content the file with that name has in backend - TODO
 - fix the bug that you can't put new files into the root - DONE

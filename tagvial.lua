@@ -239,7 +239,25 @@ end
 
 function fwfs:unlink(path)
     info("unlink! path->"..path)
-    if pio.unlink(root..path)~=0 then
+    local taglist, filename = smartsplit(path)
+    local entry = filedb[filename]
+    if not entry then
+        return -errno.ENOENT
+    end
+    for _,tag in ipairs(taglist or {}) do
+        entry[tag] = false
+    end
+    for _, value in pairs(entry) do
+        if value then
+            -- we found a still existing tag
+            filedb[filename] = entry
+            return
+        end
+    end
+    -- if we get to this point, the file is to be deleted
+    -- TODO in case we worry about permissions this is too quick
+    filedb[filename] = nil
+    if pio.unlink(root..'/'..filename)~=0 then
         return -errno.errno
     end
 end
