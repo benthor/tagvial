@@ -41,31 +41,31 @@ DONE
 - make directories/tags persistent over remounts - DONE
 - remove potential circularity of tags - DONE
 - figure out how to treat files and tags with name clashes - DONE 
+- fix ordering of readdir output to put tags first - DONE
+- find out if there is a way to abort mounting to print out warnings about mountpoint or backenddir - DONE
+- maybe make complete deletion of file in case it doesn't have any tags any more optional - DONE
+- rename this file to NOTES.md - DONE
+- create proper README.md - DONE
 
 SEMI-DONE
 -----------
 - create a function to filter path, to determine if a file in root is tagged this way - SEMI-DONE
 - implement rename with retagging semantics - MOSTLY-DONE
+- add configurable behavior - SEMI - DONE
+- rename the fuse fs - SEMI - DONE
 
 TODO
 ----
-- add configurable behavior - TODO
 - implement smart mknod, checking if filename exists, verifying have to distinguish between new files in the fs and retagged ones - TODO
 - introduce limbo for files being copied with already existing name in backed - TODO? - maybe stick to mv for now
 - bytewise compare files from limbo that are written to with content the file with that name has in backend - TODO
-- fix ordering of readdir output to put tags first - TODO (is it possible?)
 - make document root readonly, only display files already tagged - TODO
 - find out how linking works - TODO
 - make removal of files not depend on currently invisible tags - TODO
 - figure out what to do when renaming a tagpath to another one - TODO
 - figure out if you can mount fuse on top of the backend directory - TODO - most likely impossibru due to recursion
-- find out if there is a way to abort mounting to print out warnings about mountpoint or backenddir - TODO
 - maybe put all files not into root but into special tag 'ALL' including untagged ones - TODO
 - add correct link counts in tags - TODO
-- maybe make complete deletion of file in case it doesn't have any tags any more optional - TODO
-- rename this file to NOTES.md - TODO
-- create proper README.md - TODO
-- rename the fuse fs - TODO
 - create pkgbuild - TODO
 - figure out what to do next - TODO
 
@@ -73,18 +73,7 @@ TODO
 
 Desired Configurable Behavior
 -----------------------------
-- maybe as one option
-    - tag removal only in the root (otherwise permission denied)
-        - alternative: rmdir in tagpath removes all tags from path
-    - complete file removal only in root (otherwise permission denied)
-        - alternative: rm in tagpath removes also file if file has no more tags
-- deleting a tag and reinstating it causes "undelete", yes/no?
-    - (hint: to permanently delete all files form a tag do rm /tag/\*, or rm -rf /tag/\*)
-- deleting a file that has tags in the root removes it, yes/no?
-    - this clashes with "undelete" function above, at least for now
-- make tags removable only from the root
-    - perhaps although directories are writeable through access error on rmdir attempt
-
+- ALREADY MOSTLY IMPLEMENTED 
 
 
 Corner Cases
@@ -104,7 +93,7 @@ Future
 ------
 - infer new tags without having to create them from the path that is explored by getattr (unlikely that this will work)
 - for now, we ignore all files in subdirectories possibly present in the backend dir. maybe do something smart here?
-- make undelete of directories/tags possible -> it's easy
-- it is possible to only make tags deletable individualy (i.e., only in the root) -> is this a good idea maybe?
+- make undelete of directories/tags possible -> it's easy -> DONE!
+- it is possible to only make tags deletable individualy (i.e., only in the root) -> is this a good idea maybe? -> DONE!
 - allow name clashes in filenames, just don't display (or display with some numbered prefix) them unless the tagpath is unique
 - write a visual frontend using link counts as hints for tagsize
