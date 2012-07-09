@@ -22,17 +22,28 @@ The user creates a directory in the root of the filesystem for each tag he wants
 - removing tags vir rmdir
     - also works with non-empty directories
 - undelete of tags (by doing mkdir of previously rmdir'd tag)
-    - can be disabled with "-o noundelete"
+    - can be disabled with `-o noundelete`
 - renaming of files
 - removing of files from tags or completely (via 'rm')
     - future default behavior: only removing files from the root actually deletes them, rm in directories only removes the tag
-    - future option: "-o deletetagless" will automatically remove untagged file, will make root non-writeable
-    - exact behavior configurable in the future
+    - future option: `-o deletetagless` will automatically remove untagged file, will make root non-writeable
 - retagging of files via "rename" (i.e., "mv")
 - appropriate errors raised if naming clashes occur in files or directories
 - proper unmounting is actually not needed
     - persistent database (as plain .lua file in backend directory), gets updated on every transaction
     - all files stored in a single "normal" dir in the backed
+
+#### mount options ####
+
+- `-o noundelete`
+    - by default, rmdir'ing a directory/tag only "hides" the tag, mkdiring it again under the same name restores the tag to all files. This can be disabled by the above option
+
+- `-o recursivermdir`
+    - by default, rmdir'ing a directory/tag only removes that particular tag. By specifying the above option, all other tags in the path between the tag and the root also get deleted.
+        - *bug/unexpected behavior*: currently this also happenes when your current working directory is a tagpath within the fs. For example, with this option, when you are currently in `mountpoint/important/todo/pdfs` and decide to delete a random other tag, the tags `important`, `todo` and `pdfs` get deleted as well. You have been warned
+
+- `-o allowrootrm`
+    - by default, files under the root are undeletable. This option changes this and will obviously also remove all tags from the file.
 
 ### Most Important Non-working Stuff ###
 
