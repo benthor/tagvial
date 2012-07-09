@@ -40,10 +40,14 @@ The user creates a directory in the root of the filesystem for each tag he wants
 
 - `-o recursivermdir`
     - by default, rmdir'ing a directory/tag only removes that particular tag. By specifying the above option, all other tags in the path between the tag and the root also get deleted.
-        - *bug/unexpected behavior*: currently this also happenes when your current working directory is a tagpath within the fs. For example, with this option, when you are currently in `mountpoint/important/todo/pdfs` and decide to delete a random other tag, the tags `important`, `todo` and `pdfs` get deleted as well. You have been warned
+    - *bug/unexpected behavior*: currently this also happenes when your current working directory is a tagpath within the fs. For example, with this option, when you are currently in `mountpoint/important/todo/pdfs` and decide to delete a random other tag, the tags `important`, `todo` and `pdfs` get deleted as well. You have been warned
 
 - `-o allowrootrm`
     - by default, files under the root are undeletable. This option changes this and will obviously also remove all tags from the file.
+
+- `-o deletetagless`
+    - by default, a file that does not have any tags is kept in the root. This mount option will automatically clean away a file once it is removed from its last tag
+    - *feature/unexpected behavior*: this _only_ happens for files which are explicitly 'rm'd. 'rmdir'ing all its tags does not lead to file deletion
 
 ### Most Important Non-working Stuff ###
 
