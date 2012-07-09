@@ -77,6 +77,7 @@ local tags, filedb = {}, {}
 
 local OPTIONS = {
     "noundelete",  -- mkdir'ing an rmdir'd tag doesn't retag its previous members
+    "recursiverm", -- delete file from entire tagpath not just the last tag
     "recursivermdir", -- deletes the entire tagpath not just the last tag
     "deletetagless", -- deletes files when all their tags are gone
     "allowrootrm", -- allows files to be deleted from the root
@@ -270,6 +271,13 @@ end
 function fwfs:unlink(path)
     info("unlink! path->"..path)
     local taglist, filename = smartsplit(path)
+
+    if not locals['recursiverm'] then
+        taglist = {taglist[#taglist]}
+    else
+        warning("recursively removing file from all tags due to mount option")
+    end
+
     local entry = filedb[filename]
 
     -- in case of trying to delete nonexisting entry
