@@ -2,15 +2,16 @@
 *a trivial tagging filesystem*
 
 ## Notes ##
-- *The implementation is woefully incomplete, do not use!*
-    - (That said, the basics are already working)
-- You see here only the fruits of about two evenings of deep-hacking-mode so far, way more to come.
+
+#### The implementation is woefully incomplete, do not use! ####
+- (That said, the basics are already working)
+- You see here only the fruits of about three evenings of deep-hacking-mode so far, way more to come.
 
 ## Overview ##
 
 tagvial is a filesystem in userspace which replaces the traditional hirarchical view of directory trees with that of flat tag clouds (i.e., directories work now as tags)
 
-The user creates a directory in the root of the filesystem for each tag he wants to use. Each directory is accessible from "within" each other directory. Files are tagged by copying them into one or more directories. For adding multiple tags to the file, the user can simply copy it to the end of a long path of tag-directories. The file will get tagged with the names of all directories in this path. It is subsequently accessible from any of these directories.
+The user creates a directory in the root of the filesystem for each tag she wants to use. Each directory is accessible from "within" each other directory. Files are tagged by copying them into one or more directories. For adding multiple tags to the file, the user can simply copy it to the end of a long path of tag-directories. The file will get tagged with the names of all directories in this path. It is subsequently accessible from any of these directories.
 
 (For now) every file name can only exist once in the file system. "File exists"-errors are raised at appropriate moments
 
@@ -58,8 +59,6 @@ tagvial's behavior is almost exclusively determined by its various mount options
 
 ### Most Important Non-working Stuff ###
 
-- no configurable behavior yet
-    - the next thing on the list, promise
 - copy of an already tagged file into a directory doesn't add the tag
     - will produce a "file exists"-error
     - for now use 'mv'
@@ -91,8 +90,9 @@ To unmount, use
     fusermount -zu /path/to/mount_point
 
 ## ToDo ##
-- add a more conserviative default config
-- loads of other stuff
+- loads of stuff
 
 ## Bugs ##
 - also probably loads, although your data should about as safe as your backend filesystem
+    - also, if you neither specify `-o deletetagless` nor `-o allowrootrm`, you _can't accidentally delete a file_
+    - if you don't specify `-o noundelete`, even your tags are safe
