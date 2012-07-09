@@ -21,7 +21,7 @@ end
 
 function warning(msg)
     if verbose then
-        print(yellow.."/!\\ "..msg..clean)
+        print(yellow.."/!\\ ".. msg ..clean)
     end
 end
 
@@ -409,8 +409,75 @@ function fwfs:rename(oldpath, newpath)
     end
 end
 
+
+local function filteroptions(argslist, filteropts)
+    local options = ""
+    local last = 0
+    local strippedargs = {}
+
+    for i,arg in ipairs(argslist) do
+        arg,_ = arg:gsub("%s", "")
+        if arg:sub(1,2) == '-o' then
+            -- put everything we had after last option in arguments list
+            for j=last+1,i-1 do
+                table.insert(strippedargs, argslist[j])
+            end
+            local opt = arg:sub(3)
+            local comma = false
+            if opt ~= "" then
+                options = options .. " " .. opt
+            else
+                -- HACK!
+                comma = true
+            end
+            if opt:sub(-1) == ',' then
+                comma = true
+            end
+            for j=i+1,#argslist do
+                local opt = argslist[j]:gsub("%s", "")
+                if not comma and opt:sub(1,1) ~= ',' then
+                    break
+                end
+                if opt:sub(1,1) == "-" then
+                    break
+                end
+                if opt:sub(-1) ~= "," then
+                    comma = false
+                end
+                options = options .. " " .. opt
+                if j > last then last = j end
+            end
+        end
+    end
+    local localopts = {}
+    local filteropts = mkset(filteropts)
+    local minuso = false
+    for opt in options:gmatch("[^,%s]+") do
+        if filteropts[opt] then
+            localopts[opt] = true
+        else
+            if not minuso then
+                table.insert(strippedargs, "-o")
+                minuso = true
+            end
+            table.insert(strippedargs, opt)
+        end
+    end
+    return strippedargs, localopts
+end
+
+
 local args = {"fwfs", select(2, ...)}
+args, locals = filteroptions(args, {"foo", "bar", "spam"})
+for k,v in pairs(args) do
+    print(k, tostring(v))
+end
+for k,v in pairs(locals) do
+    print(k, v)
+end
+assert(false)
 for _,arg in ipairs(args) do
+    info(arg)
     if arg=='-d' then
         verbose = true
     end

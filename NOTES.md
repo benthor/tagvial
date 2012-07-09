@@ -65,6 +65,8 @@ TODO
 - maybe make complete deletion of file in case it doesn't have any tags any more optional - TODO
 - rename this file to NOTES.md - TODO
 - create proper README.md - TODO
+- rename the fuse fs - TODO
+- create pkgbuild - TODO
 - figure out what to do next - TODO
 
 
