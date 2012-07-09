@@ -76,9 +76,10 @@ end
 local tags, filedb = {}, {}
 
 local OPTIONS = {
-    "noundelete", 
-    "recursivermdir",
-    "deletetagless",
+    "noundelete",  -- mkdir'ing an rmdir'd tag doesn't retag its previous members
+    "recursivermdir", -- deletes the entire tagpath not just the last tag
+    "deletetagless", -- deletes files when all their tags are gone
+    "allowrootrm", -- allows files to be deleted from the root
     }
 
 local function savedb()
@@ -185,7 +186,13 @@ end
 function fwfs:rmdir(path)
     info("rmdir! path->"..path)
     taglist = splitpath(path)
-    for _,tag in ipairs(taglist) do
+    if not locals['recursivermdir'] then
+        taglist = {taglist[#taglist]}
+    else
+        warning("recursively deleting the entire path due to mount option")
+    end
+    for i,tag in ipairs(taglist) do
+        warning("deleting "..tag)
         tags[tag] = nil
         if locals['noundelete'] then
             warning("permanently deleting " .. tag .. " due to disabled undelete")
@@ -193,10 +200,11 @@ function fwfs:rmdir(path)
                 -- XXX put "nil" here instead of "false"
                 -- otherwise the fact that a certain tag was present "leaks"
                 -- OTOH, this facilitates implementation of an undelete tool ;)
-                tagset[tag] = false
+                tagset[tag] = nil
             end
         end
     end
+    savedb()
 end
 
 function fwfs:opendir(path, fi)
@@ -272,9 +280,19 @@ function fwfs:unlink(path)
 
     -- in case we try to delete from the root
     if not taglist then
-        return -errno.EACCES
+        if not locals['allowrootrm'] then
+            return -errno.EACCES
+        else
+            if pio.unlink(root..'/'..filename)~=0 then
+                return -errno.errno
+            else
+                filedb[filename] = nil
+                return
+            end
+        end
     end
 
+    -- if we get here, file hasn't been deleted yet
     -- remove tags one by one
     for _,tag in ipairs(taglist) do
         entry[tag] = false
@@ -290,10 +308,10 @@ function fwfs:unlink(path)
     end
 
     -- if we get to this point, the file has no tags any more and is to be deleted
-    -- TODO in case we worry about permissions this is too quick
-    filedb[filename] = nil
     if pio.unlink(root..'/'..filename)~=0 then
         return -errno.errno
+    else
+        filedb[filename] = nil
     end
 end
 
@@ -432,7 +450,7 @@ local function filteroptions(argslist, filteropts)
         arg,_ = arg:gsub("%s", "")
         if arg:sub(1,2) == '-o' then
             -- put everything we had after last option in arguments list
-            for j=last+1,i-1 do
+            for j=last,i-1 do
                 table.insert(strippedargs, argslist[j])
             end
             local opt = arg:sub(3)
@@ -458,9 +476,15 @@ local function filteroptions(argslist, filteropts)
                     comma = false
                 end
                 options = options .. " " .. opt
-                if j > last then last = j end
+                last = j+1
             end
         end
+    end
+    if last == 0 then
+        return argslist, {}
+    end
+    for i=last,#argslist do
+        table.insert(strippedargs,argslist[i])
     end
     local localopts = {}
     local filteropts = mkset(filteropts)
@@ -483,6 +507,7 @@ end
 local args = {"tagvial", select(2, ...)}
 args, locals = filteroptions(args, OPTIONS)
 for _,arg in ipairs(args) do
+    info(arg)
     if arg=='-d' then
         verbose = true
     end
