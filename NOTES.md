@@ -82,7 +82,8 @@ Desired Configurable Behavior
     - (hint: to permanently delete all files form a tag do rm /tag/\*, or rm -rf /tag/\*)
 - deleting a file that has tags in the root removes it, yes/no?
     - this clashes with "undelete" function above, at least for now
-
+- make tags removable only from the root
+    - perhaps although directories are writeable through access error on rmdir attempt
 
 
 

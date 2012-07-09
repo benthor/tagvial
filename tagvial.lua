@@ -75,6 +75,12 @@ end
 
 local tags, filedb = {}, {}
 
+local OPTIONS = {
+    "noundelete", 
+    "recursivermdir",
+    "deletetagless",
+    }
+
 local function savedb()
     persistence.store(root .. '/' .. dbname, tags, filedb)
 end
@@ -181,10 +187,16 @@ function fwfs:rmdir(path)
     taglist = splitpath(path)
     for _,tag in ipairs(taglist) do
         tags[tag] = nil
+        if locals['noundelete'] then
+            warning("permanently deleting " .. tag .. " due to disabled undelete")
+            for file,tagset in pairs(filedb) do
+                -- XXX put "nil" here instead of "false"
+                -- otherwise the fact that a certain tag was present "leaks"
+                -- OTOH, this facilitates implementation of an undelete tool ;)
+                tagset[tag] = false
+            end
+        end
     end
-    -- TODO, also cleanup filedb entries
-    -- if we don't do this, we can "undelete" by just mkdiring the 
-    -- tag name again. or claim this is a feature. or make configable
 end
 
 function fwfs:opendir(path, fi)
@@ -409,7 +421,8 @@ function fwfs:rename(oldpath, newpath)
     end
 end
 
-
+-- filters argslist for certain options, passes on the rest
+-- returns table of all filtered options set to true
 local function filteroptions(argslist, filteropts)
     local options = ""
     local last = 0
@@ -467,17 +480,9 @@ local function filteroptions(argslist, filteropts)
 end
 
 
-local args = {"fwfs", select(2, ...)}
-args, locals = filteroptions(args, {"foo", "bar", "spam"})
-for k,v in pairs(args) do
-    print(k, tostring(v))
-end
-for k,v in pairs(locals) do
-    print(k, v)
-end
-assert(false)
+local args = {"tagvial", select(2, ...)}
+args, locals = filteroptions(args, OPTIONS)
 for _,arg in ipairs(args) do
-    info(arg)
     if arg=='-d' then
         verbose = true
     end

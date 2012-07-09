@@ -20,10 +20,13 @@ The user creates a directory in the root of the filesystem for each tag he wants
 
 - adding tags via mkdir
 - removing tags vir rmdir
+    - also works with non-empty directories
 - undelete of tags (by doing mkdir of previously rmdir'd tag)
-    - configurable alternative of true delete in the future
+    - can be disabled with "-o noundelete"
 - renaming of files
 - removing of files from tags or completely (via 'rm')
+    - future default behavior: only removing files from the root actually deletes them, rm in directories only removes the tag
+    - future option: "-o deletetagless" will automatically remove untagged file, will make root non-writeable
     - exact behavior configurable in the future
 - retagging of files via "rename" (i.e., "mv")
 - appropriate errors raised if naming clashes occur in files or directories
