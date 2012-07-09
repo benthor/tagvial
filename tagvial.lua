@@ -200,7 +200,7 @@ function fwfs:rmdir(path)
                 -- XXX put "nil" here instead of "false"
                 -- otherwise the fact that a certain tag was present "leaks"
                 -- OTOH, this facilitates implementation of an undelete tool ;)
-                tagset[tag] = nil
+                tagset[tag] = false
             end
         end
     end
@@ -307,11 +307,17 @@ function fwfs:unlink(path)
         end
     end
 
-    -- if we get to this point, the file has no tags any more and is to be deleted
-    if pio.unlink(root..'/'..filename)~=0 then
-        return -errno.errno
+    -- if we get to this point, the file has no tags any more
+    -- depending on mount option, it is to be deleted or not
+    if locals['deletetagless'] then
+        warning("file has lost all tags and will be deleted due to mount option")
+        if pio.unlink(root..'/'..filename)~=0 then
+            return -errno.errno
+        else
+            filedb[filename] = nil
+        end
     else
-        filedb[filename] = nil
+        info("file does not have any tags any more")
     end
 end
 
