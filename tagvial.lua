@@ -55,15 +55,6 @@ local function mkset(array)
     return set
 end
 
-local function tablesize(t)
-    -- TODO only use metatables with stored table size
-    -- saves overhead, but for now this:
-    local n = 0
-    for _,_ in pairs(t) do
-        n = n + 1
-    end
-end
-
 require 'persistence'
 
 local dbname = '.db.lua'
@@ -140,61 +131,46 @@ end
 
 local fwfs = {}
 
-local fields = {'dev', 'ino', 'mode', 'nlink', 'uid', 'gid', 'rdev', 'size', 'atime', 'mtime', 'ctime', 'blksize', 'blocks'}
 
 function fwfs:getattr(path, st)
     info("getattr! path->"..path)
+    local fields = {'dev', 'ino', 'mode', 'nlink', 'uid', 'gid', 'rdev', 'size', 'atime', 'mtime', 'ctime', 'blksize', 'blocks'}
     local taglist,last = smartsplit(path)
-    -- FIXME, the loop protection should be included here as well
+    local pst = pio.new 'stat'
     -- if a last element is present but globally not known as a tag
     if last and not tags[last] then
         -- it is probably a file
-        local pst = pio.new 'stat'
         -- make sure that we don't consider files not in the current taglist
         if last and not gettaggedas(taglist)[last] then
             danger("file not in current taglist")
             return -errno.ENOENT
         end
-        -- XXX FUGLY
-        -- protection for the / dir
-        --TODO remove if works regardless
-        --last = last or ""
-        -- so we look and see if we have such a file
         if pio.stat(root..'/'..last, pst)~=0 then
             danger("we don't have this file")
             return -errno.errno
         end
-        for _,k in ipairs(fields) do
-            st[k] = pst[k]
-        end
     else
         --if not last then
         ---- we are in the root, get attributes from the backend dir
-        -- disabled conditional for now, makes sense to use root directory attributes here as well
-        -- TODO cache all the fields in the tags db
-            local pst = pio.new('stat')
-            if pio.stat(root, pst) ~= 0 then
-                danger("root not found?!?")
-                return -errno.errno 
-            end
-            for _,field in ipairs(fields) do
-                st[field] = pst[field]
-            end
-            --else
-        if last then
-            st.mode = tags[last].mode
+        -- use the backend directory attributes for all tags
+        if pio.stat(root, pst) ~= 0 then
+            danger("root not found?!?")
+            return -errno.errno 
         end
         -- need to set nlink = 2 + number_of_subdirs 
-        st.nlink = 2
+        pst.nlink = 2
         local tagset = mkset(taglist or {})
         if last then tagset[last] = true end
         for tag,_ in pairs(tags) do
             -- since subdirectories that are in the path already are to be excluded
             if not tagset[tag] then
-                st.nlink = st.nlink + 1
+                pst.nlink = pst.nlink + 1
             end
         end
-        st.size = 4096
+        pst.size = 4096
+    end
+    for _,field in ipairs(fields) do
+        st[field] = pst[field]
     end
 end
 
@@ -210,7 +186,7 @@ function fwfs:mkdir(path, mode)
             return -errno.EEXIST
         end
         if not tags[tag] then
-            -- this one was a headache to debug
+            -- the below is not actually needed at this point
             mode['IFDIR'] = true
             tags[tag] = {mode=mode}
         end
@@ -252,9 +228,7 @@ function fwfs:opendir(path, fi)
         --return -errno.errno
     --end
     fi.fh = #descriptors+1
-    -- XXX splitpath(path) is a bit arbitrary here
-    -- maybe not even needed
-    -- HA, IT IS NEEDED NOW
+    -- dir table entry used by readdir
     descriptors[fi.fh] = {dir=splitpath(path)}
 end
 
@@ -269,10 +243,13 @@ function fwfs:releasedir(path, fi)
 end
 
 function fwfs:readdir(path, filler, offset, fi)
-        -- filler: function value
-        -- fi: userdata
+    -- filler: function value
+    -- fi: userdata
     info("readdir! path->"..path.." offset->"..offset.." fi->"..udata.tostring(fi))
     if fi.fh~=0 then
+        -- add . and .. boilerplate
+        filler(".", nil, 0)
+        filler("..", nil, 0)
         -- remove those tags already in the tagpath
         local pathtags = mkset(splitpath(path))
         for tag,_ in pairs(tags) do
@@ -306,6 +283,7 @@ end
 function fwfs:unlink(path)
     info("unlink! path->"..path)
     local taglist, filename = smartsplit(path)
+    taglist = taglist or {}
 
     if not locals['recursiverm'] then
         taglist = {taglist[#taglist]}
@@ -322,7 +300,7 @@ function fwfs:unlink(path)
     end
 
     -- in case we try to delete from the root
-    if not taglist then
+    if #taglist == 0 then
         if not locals['allowrootrm'] then
             return -errno.EACCES
         else
