@@ -62,7 +62,8 @@ tagvial's behavior is almost exclusively determined by its various mount options
 - copy of an already tagged file into a directory doesn't add the tag
     - will produce a "file exists"-error
     - for now use 'mv'
-- no links, no proper file attributes, no permissions
+- visible (directory) permissions are taken from the backend dir and can only be changed there. Although permission semantics are skewed in fuse anyway, so this might not work as expected
+- file linking not working
 
 ### Credits ###
 
@@ -75,7 +76,7 @@ tagvial is implemented using Jérôme Vuarand's excellent [fuse](http://fuse.sou
 
 To see shiny colorful messages, run this (stays in the foreground)
 
-    while test $! -eq 0; do lua tagvial.lua /path/to/backend_dir/ /path/to/mount_point/ -d; done
+    while test $! -eq 0; do lua tagvial.lua /path/to/backend_dir/ /path/to/mount_point/ -o invalidmountoption,allowrootrm -d; done
 
 ### Regular ###
 
@@ -94,5 +95,6 @@ To unmount, use
 
 ## Bugs ##
 - also probably loads, although your data should about as safe as your backend filesystem
-    - also, if you neither specify `-o deletetagless` nor `-o allowrootrm`, you _can't accidentally delete a file_
-    - if you don't specify `-o noundelete`, even your tags are safe
+    - also, if you neither specify `-o deletetagless` nor `-o allowrootrm`, you _can't accidentally delete a file_ at the mountpoint (backend is a diffent story of course)
+    - if you don't specify `-o noundelete`, even your tags are safe (if you don't delete the backend database)
+- possibly my mount-option names are a bit brain-dead

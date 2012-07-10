@@ -171,6 +171,7 @@ function fwfs:getattr(path, st)
         --if not last then
         ---- we are in the root, get attributes from the backend dir
         -- disabled conditional for now, makes sense to use root directory attributes here as well
+        -- TODO cache all the fields in the tags db
             local pst = pio.new('stat')
             if pio.stat(root, pst) ~= 0 then
                 danger("root not found?!?")

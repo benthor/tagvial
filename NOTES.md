@@ -46,6 +46,7 @@ DONE
 - maybe make complete deletion of file in case it doesn't have any tags any more optional - DONE
 - rename this file to NOTES.md - DONE
 - create proper README.md - DONE
+- add proper file attributes - DONE
 
 SEMI-DONE
 -----------
@@ -53,6 +54,7 @@ SEMI-DONE
 - implement rename with retagging semantics - MOSTLY-DONE
 - add configurable behavior - SEMI - DONE
 - rename the fuse fs - SEMI - DONE
+- add proper directory attributes - SEMI - DONE
 
 TODO
 ----
@@ -61,6 +63,8 @@ TODO
 - bytewise compare files from limbo that are written to with content the file with that name has in backend - TODO
 - make document root readonly, only display files already tagged - TODO
 - find out how linking works - TODO
+- add . and .. dirs - TODO
+- implement file/directory permission checks - TODO
 - make removal of files not depend on currently invisible tags - TODO
 - figure out what to do when renaming a tagpath to another one - TODO
 - figure out if you can mount fuse on top of the backend directory - TODO - most likely impossibru due to recursion
