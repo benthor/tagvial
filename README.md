@@ -1,21 +1,33 @@
 # tagvial #
-*a trivial tagging filesystem*
+*a trivial tagging file system*
 
-## Notes ##
+## Status ##
 
-#### The implementation is woefully incomplete, do not use! ####
-- (That said, the basics are already working)
-- You see here only the fruits of about three evenings of deep-hacking-mode so far, way more to come.
+#### usable on alpha-level at your own risk####
+
+(to date (Jul 11, 2012) , I've only worked on this for about four evenings, and this thing is accordingly still somewhat incomplete, see below)
 
 ## Overview ##
 
-tagvial is a filesystem in userspace which replaces the traditional hirarchical view of directory trees with that of flat tag clouds (i.e., directories work now as tags)
+tagvial is a file system in userspace which replaces the traditional hirarchical view of directory trees with that of flat tag clouds (i.e., directories work now as tags)
 
-The user creates a directory in the root of the filesystem for each tag she wants to use. Each directory is accessible from "within" each other directory. Files are tagged by copying them into one or more directories. For adding multiple tags to the file, the user can simply copy it to the end of a long path of tag-directories. The file will get tagged with the names of all directories in this path. It is subsequently accessible from any of these directories.
+The user creates a directory in the root of the file system for each tag she wants to use. Each directory is accessible from "within" each other directory. Files are tagged by copying them into one or more directories. For adding multiple tags to the file, the user can simply copy it to the end of a long path of tag-directories. The file will get tagged with the names of all directories in this path. It is subsequently accessible from any of these directories.
 
 (For now) every file name can only exist once in the file system. "File exists"-errors are raised at appropriate moments
 
-*To be continued ...*
+### Filesystem Semantics ###
+
+- `mkdir` anywhere within the mouted file system (FS) creates a **tag** in the form of a directory which is then visible in any other "directory" in the FS apart from within itself
+
+- `cp` of a file whose name does not exist in the FS yet adds it to all the tags in its destination path, as well as to the file system root. It is not possible to `cp` a filename which already exists in the root to an additional tag path, unless a new name is given. For adding a file to additional tags, use `mv` (at least for now)
+
+- `mv` of a file will (for now) add it to all tags in the destination tag path, while removing all tags which are in the source path. I.e., `mv`ing a file from the root to a destination path adds all the latter's constituent tags to the file without removing any existing ones.
+
+- `rm` of a file from the root is forbidden (by default, but see mount option `allowrootrm` below). `rm` of a file from a tag path removes it from the last tag in the path, or (with mount option `recursiverm`) from all tags in the path. If mount option `deletetagless` is given, a file is completely deleted if its last tag is removed.
+
+- `rmdir` removes the last tag in the given path from the entire FS or, if the `recursivermdir` option is given, all tags in the path are removed. If files turn out to be tagless due to this, they are _not_ removed, regardless of potential `deletetagless` option. If the `noundelete` option isn't given, a subsequent `mkdir` of the removed tag name restores it and also readds all files that previously belonged to it.
+
+- `ln` is not yet implemented
 
 ### Working Features ###
 
@@ -44,6 +56,7 @@ tagvial's behavior is almost exclusively determined by its various mount options
 
 - `-o recursiverm`
     - by default, rm'ing a file from a tagpath only removes the last tag. With this option it instead loses all tags from its entire tagpath.
+    - *note*: for now this option is required when using firefox to download a file directly into the fs, since it apparently does some "exploratory" mknod'ing and subsequent unlink'ing before attempting to store the file proper. 
 
 - `-o recursivermdir`
     - by default, rmdir'ing a directory/tag only removes that particular tag. By specifying the above option, all other tags in the path between the tag and the root also get deleted.
