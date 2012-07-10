@@ -150,21 +150,39 @@ function fwfs:getattr(path, st)
     if last and not tags[last] then
         -- it is probably a file
         local pst = pio.new 'stat'
-        -- make sure that we don't consider files not in the current tagset
+        -- make sure that we don't consider files not in the current taglist
         if last and not gettaggedas(taglist)[last] then
+            danger("file not in current taglist")
             return -errno.ENOENT
         end
         -- XXX FUGLY
         -- protection for the / dir
-        last = last or ""
+        --TODO remove if works regardless
+        --last = last or ""
         -- so we look and see if we have such a file
         if pio.stat(root..'/'..last, pst)~=0 then
+            danger("we don't have this file")
             return -errno.errno
         end
         for _,k in ipairs(fields) do
             st[k] = pst[k]
         end
     else
+        --if not last then
+        ---- we are in the root, get attributes from the backend dir
+        -- disabled conditional for now, makes sense to use root directory attributes here as well
+            local pst = pio.new('stat')
+            if pio.stat(root, pst) ~= 0 then
+                danger("root not found?!?")
+                return -errno.errno 
+            end
+            for _,field in ipairs(fields) do
+                st[field] = pst[field]
+            end
+            --else
+        if last then
+            st.mode = tags[last].mode
+        end
         -- need to set nlink = 2 + number_of_subdirs 
         st.nlink = 2
         local tagset = mkset(taglist or {})
@@ -172,11 +190,9 @@ function fwfs:getattr(path, st)
         for tag,_ in pairs(tags) do
             -- since subdirectories that are in the path already are to be excluded
             if not tagset[tag] then
-                danger(tag)
                 st.nlink = st.nlink + 1
             end
         end
-        st.mode = mkset({"IFDIR", "IRUSR", "IWUSR", "IXUSR", "IRGRP", "IWGRP", "IXGRP", "IROTH", "IWOTH", "IXOTH" })
         st.size = 4096
     end
 end
@@ -193,14 +209,13 @@ function fwfs:mkdir(path, mode)
             return -errno.EEXIST
         end
         if not tags[tag] then
-            tags[tag] = {}
+            -- this one was a headache to debug
+            mode['IFDIR'] = true
+            tags[tag] = {mode=mode}
         end
     end
     -- write to db
     savedb()
-    --if pio.mkdir(root..path, mode)~=0 then
-        --return -errno.errno
-    --end
 end
 
 function fwfs:rmdir(path)
