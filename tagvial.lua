@@ -55,6 +55,15 @@ local function mkset(array)
     return set
 end
 
+local function tablesize(t)
+    -- TODO only use metatables with stored table size
+    -- saves overhead, but for now this:
+    local n = 0
+    for _,_ in pairs(t) do
+        n = n + 1
+    end
+end
+
 require 'persistence'
 
 local dbname = '.db.lua'
@@ -123,7 +132,7 @@ end
 
 local function smartsplit(path)
     local tags = splitpath(path)
-    last = tags[#tags]
+    local last = tags[#tags]
     tags[#tags] = nil
     if #tags == 0 then tags = nil end
     return tags, last
@@ -135,14 +144,14 @@ local fields = {'dev', 'ino', 'mode', 'nlink', 'uid', 'gid', 'rdev', 'size', 'at
 
 function fwfs:getattr(path, st)
     info("getattr! path->"..path)
-    local tagset,last = smartsplit(path)
+    local taglist,last = smartsplit(path)
     -- FIXME, the loop protection should be included here as well
-    -- if the last tag is not in the global tagset
-    if not tags[last] then
+    -- if a last element is present but globally not known as a tag
+    if last and not tags[last] then
         -- it is probably a file
         local pst = pio.new 'stat'
         -- make sure that we don't consider files not in the current tagset
-        if last and not gettaggedas(tagset)[last] then
+        if last and not gettaggedas(taglist)[last] then
             return -errno.ENOENT
         end
         -- XXX FUGLY
@@ -156,9 +165,19 @@ function fwfs:getattr(path, st)
             st[k] = pst[k]
         end
     else
+        -- need to set nlink = 2 + number_of_subdirs 
+        st.nlink = 2
+        local tagset = mkset(taglist or {})
+        if last then tagset[last] = true end
+        for tag,_ in pairs(tags) do
+            -- since subdirectories that are in the path already are to be excluded
+            if not tagset[tag] then
+                danger(tag)
+                st.nlink = st.nlink + 1
+            end
+        end
         st.mode = mkset({"IFDIR", "IRUSR", "IWUSR", "IXUSR", "IRGRP", "IWGRP", "IXGRP", "IROTH", "IWOTH", "IXOTH" })
         st.size = 4096
-        st.nlink = 2
     end
 end
 
@@ -511,7 +530,10 @@ local function filteroptions(argslist, filteropts)
                 table.insert(strippedargs, "-o")
                 minuso = true
             end
-            table.insert(strippedargs, opt)
+            -- not sure if fuse needs a comma seperated list of opts
+            -- also not sure if trailing comma matters
+            -- also not sure if whitespace is allowed
+            table.insert(strippedargs, opt..",")
         end
     end
     return strippedargs, localopts
